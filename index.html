@@ -2,9 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rampana Faucet</title>
-  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script type="module">
+    import {
+      WalletAdapterNetwork
+    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.10.3/lib/index.js";
+    import {
+      ConnectionProvider,
+      WalletProvider
+    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react@0.15.19/lib/index.js";
+    import {
+      getPhantomWallet,
+      getSolflareWallet
+    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.14.2/lib/index.js";
+    import {
+      WalletModalProvider,
+      WalletMultiButton
+    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react-ui@0.9.13/lib/index.js";
+
+    const wallets = [getPhantomWallet(), getSolflareWallet()];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById("wallet-container");
+      const button = document.createElement("wallet-multi-button");
+      container.appendChild(button);
+    });
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react-ui/styles.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -43,49 +68,9 @@
   <div class="container">
     <h1>Claim Your Rampana</h1>
     <p>1,000 $RAMP per wallet per day</p>
-    <button id="connectButton">Connect Wallet</button>
+    <div id="wallet-container"></div>
     <button id="claimButton" style="display:none">Claim Rampana</button>
     <div id="status"></div>
   </div>
-
-  <script>
-    const connection = new solanaWeb3.Connection("https://api.devnet.solana.com");
-    const RAMPANA_MINT = new solanaWeb3.PublicKey("GhtKeFP59oaeU7WfrA7oFJWqwYK4bNt8GajHuGCPaZpp");
-
-    let wallet = null;
-
-    document.getElementById("connectButton").onclick = async () => {
-      try {
-        const resp = await window.solana.connect();
-        wallet = resp.publicKey;
-        document.getElementById("status").innerText = `Connected: ${wallet.toString()}`;
-        document.getElementById("claimButton").style.display = "inline-block";
-      } catch (err) {
-        document.getElementById("status").innerText = "Wallet connection failed.";
-      }
-    };
-
-    document.getElementById("claimButton").onclick = async () => {
-      if (!wallet) return;
-      document.getElementById("status").innerText = "Checking eligibility...";
-
-      const res = await fetch("https://your-faucet-server.com/api/claim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallet: wallet.toString() })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById("status").innerText = "Rampana sent! Check your wallet.";
-      } else {
-        document.getElementById("status").innerText = data.message || "Claim failed.";
-      }
-    };
-
-    window.solana?.on("connect", () => {
-      document.getElementById("status").innerText = "Wallet connected.";
-    });
-  </script>
 </body>
 </html>
