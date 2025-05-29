@@ -54,15 +54,22 @@
     let wallet = null;
 
     async function connect() {
-      const provider = window.solana || window.solflare;
-      if (!provider?.isPhantom && !provider?.isSolflare) {
+      let provider = null;
+
+      if (window.solflare?.isSolflare) {
+        provider = window.solflare;
+      } else if (window.solana?.isPhantom) {
+        provider = window.solana;
+      }
+
+      if (!provider) {
         statusDiv.innerText = "No supported Solana wallet found.";
         return;
       }
 
       try {
         const resp = await provider.connect();
-        wallet = resp.publicKey.toString();
+        wallet = resp.publicKey?.toString() || provider.publicKey?.toString();
         statusDiv.innerText = "Wallet connected: " + wallet;
         connectBtn.style.display = "none";
         claimBtn.style.display = "inline-block";
@@ -74,7 +81,6 @@
     async function claim() {
       if (!wallet) return;
       statusDiv.innerText = "Claiming 1,000 RAMP... (backend not live)";
-      // In the future, this is where you'd call your API
     }
 
     connectBtn.onclick = connect;
