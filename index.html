@@ -4,59 +4,33 @@
   <meta charset="UTF-8" />
   <title>Rampana Faucet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script type="module">
-    import {
-      WalletAdapterNetwork
-    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-base@0.10.3/lib/index.js";
-    import {
-      ConnectionProvider,
-      WalletProvider
-    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react@0.15.19/lib/index.js";
-    import {
-      getPhantomWallet,
-      getSolflareWallet
-    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.14.2/lib/index.js";
-    import {
-      WalletModalProvider,
-      WalletMultiButton
-    } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react-ui@0.9.13/lib/index.js";
-
-    const wallets = [getPhantomWallet(), getSolflareWallet()];
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const container = document.getElementById("wallet-container");
-      const button = document.createElement("wallet-multi-button");
-      container.appendChild(button);
-    });
-  </script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-react-ui/styles.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #fdf6f0;
+      background: #f4f4f4;
       text-align: center;
       padding: 2rem;
     }
     .container {
+      background: white;
       max-width: 400px;
       margin: auto;
       padding: 2rem;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     button {
-      background-color: #ff914d;
-      color: white;
       padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
       margin-top: 1rem;
+      font-size: 1rem;
+      background-color: #ff914d;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
     }
     button:hover {
-      background-color: #e57735;
+      background-color: #e37730;
     }
     #status {
       margin-top: 1rem;
@@ -68,9 +42,43 @@
   <div class="container">
     <h1>Claim Your Rampana</h1>
     <p>1,000 $RAMP per wallet per day</p>
-    <div id="wallet-container"></div>
-    <button id="claimButton" style="display:none">Claim Rampana</button>
+    <button id="connectWallet">Connect Wallet</button>
+    <button id="claimBtn" style="display:none">Claim Rampana</button>
     <div id="status"></div>
   </div>
+
+  <script>
+    const connectBtn = document.getElementById('connectWallet');
+    const claimBtn = document.getElementById('claimBtn');
+    const statusDiv = document.getElementById('status');
+    let wallet = null;
+
+    async function connect() {
+      const provider = window.solana || window.solflare;
+      if (!provider?.isPhantom && !provider?.isSolflare) {
+        statusDiv.innerText = "No supported Solana wallet found.";
+        return;
+      }
+
+      try {
+        const resp = await provider.connect();
+        wallet = resp.publicKey.toString();
+        statusDiv.innerText = "Wallet connected: " + wallet;
+        connectBtn.style.display = "none";
+        claimBtn.style.display = "inline-block";
+      } catch (err) {
+        statusDiv.innerText = "Wallet connection failed.";
+      }
+    }
+
+    async function claim() {
+      if (!wallet) return;
+      statusDiv.innerText = "Claiming 1,000 RAMP... (backend not live)";
+      // In the future, this is where you'd call your API
+    }
+
+    connectBtn.onclick = connect;
+    claimBtn.onclick = claim;
+  </script>
 </body>
 </html>
