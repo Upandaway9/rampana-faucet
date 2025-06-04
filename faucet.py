@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow CORS from all origins
+CORS(app)
 
 @app.route('/')
 def home():
@@ -16,8 +16,12 @@ def claim():
     if not wallet:
         return jsonify({"success": False, "message": "Wallet address is required."}), 400
 
-    # Mock success response
-    return jsonify({"success": True, "message": f"1,000 RAMP sent to {wallet}!"}), 200
+    # Placeholder response with fake transaction signature
+    return jsonify({
+        "success": True,
+        "message": f"1,000 RAMP sent to {wallet}!",
+        "signature": "mock-signature-123456789"
+    }), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
