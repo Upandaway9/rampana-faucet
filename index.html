@@ -80,7 +80,27 @@
 
     async function claim() {
       if (!wallet) return;
-      statusDiv.innerText = "Claiming 1,000 RAMP... (backend not live)";
+      statusDiv.innerText = "Claiming 1,000 RAMP...";
+
+      try {
+        const response = await fetch("https://rampana-faucet.onrender.com/claim", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ wallet })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          statusDiv.innerText = "Success! TX Signature: " + data.signature;
+        } else {
+          statusDiv.innerText = "Error: " + data.error;
+        }
+      } catch (err) {
+        statusDiv.innerText = "Request failed. " + err.message;
+      }
     }
 
     connectBtn.onclick = connect;
