@@ -1,31 +1,26 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from solana.keypair import Keypair
-from solana.rpc.api import Client
-from solana.transaction import Transaction
-from solana.rpc.types import TxOpts
-from solana.rpc.commitment import Confirmed
-from solana.system_program import transfer, TransferParams
+from solders.keypair import Keypair
 from solders.pubkey import Pubkey
-import base58
+from solana.rpc.api import Client
 import os
+import json
 
 app = Flask(__name__)
 CORS(app)
 
-# Load the creator's keypair from a local file
+# Load the creator's keypair from file
 CREATOR_KEYPAIR_PATH = os.path.expanduser("~/.config/solana/faucet-keypair.json")
 
 def load_keypair(path):
     with open(path, 'r') as f:
-        secret = f.read().strip().strip('[]').split(',')
-        secret = list(map(int, secret))
-        return Keypair.from_secret_key(bytes(secret))
+        secret = json.load(f)
+        return Keypair.from_bytes(bytes(secret))
 
 creator = load_keypair(CREATOR_KEYPAIR_PATH)
 client = Client("https://api.devnet.solana.com")
 
-TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"  # Replace with your actual token address
+TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"  # Your Rampana token mint
 
 @app.route("/")
 def health():
@@ -34,17 +29,14 @@ def health():
 @app.route("/claim", methods=["POST"])
 def claim():
     data = request.get_json()
-    recipient_address = data.get("wallet")
-    if not recipient_address:
+    wallet_address = data.get("wallet")
+    if not wallet_address:
         return jsonify({"error": "Missing wallet address"}), 400
 
     try:
-        # Transfer 1,000 tokens (remember 9 decimals, so 1000000000 base units)
-        tx = client.request_airdrop(Pubkey.from_string(recipient_address), 1000000000)
-        if "result" in tx:
-            return jsonify({"success": True, "tx": tx["result"]})
-        else:
-            return jsonify({"success": False, "error": tx}), 500
+        # Airdrop a small amount of SOL to the wallet to ensure they can receive tokens
+        response = client.request_airdrop(Pubkey.from_string(wallet_address), 1000000000)  # 0.001 SOL
+        return jsonify({"success": True, "tx": response["result"]})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
