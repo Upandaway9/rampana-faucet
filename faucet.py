@@ -9,8 +9,8 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Load the creator's keypair from file
-CREATOR_KEYPAIR_PATH = "faucet-keypair.json"
+# Correct path to the keypair file
+CREATOR_KEYPAIR_PATH = os.path.join(os.path.dirname(__file__), "faucet-keypair.json")
 
 def load_keypair(path):
     with open(path, 'r') as f:
