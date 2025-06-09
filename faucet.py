@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Load the creator's keypair from file
-CREATOR_KEYPAIR_PATH = os.path.expanduser("~/.config/solana/faucet-keypair.json")
+CREATOR_KEYPAIR_PATH = "faucet-keypair.json"
 
 def load_keypair(path):
     with open(path, 'r') as f:
