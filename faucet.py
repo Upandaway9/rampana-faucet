@@ -9,8 +9,8 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Correct path to the keypair file
-CREATOR_KEYPAIR_PATH = os.path.join(os.path.dirname(__file__), "faucet-keypair.json")
+# Correct path to the keypair file for Render
+CREATOR_KEYPAIR_PATH = "/opt/render/project/src/faucet-keypair.json"
 
 def load_keypair(path):
     with open(path, 'r') as f:
@@ -20,25 +20,13 @@ def load_keypair(path):
 creator = load_keypair(CREATOR_KEYPAIR_PATH)
 client = Client("https://api.devnet.solana.com")
 
-TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"  # Your Rampana token mint
+TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"
 
 @app.route("/")
 def health():
-    return "Rampana Faucet is Live!"
+    return "Rampana Faucet is live!"
 
-@app.route("/claim", methods=["POST"])
-def claim():
-    data = request.get_json()
-    wallet_address = data.get("wallet")
-    if not wallet_address:
-        return jsonify({"error": "Missing wallet address"}), 400
-
-    try:
-        # Airdrop a small amount of SOL to the wallet to ensure they can receive tokens
-        response = client.request_airdrop(Pubkey.from_string(wallet_address), 1000000000)  # 0.001 SOL
-        return jsonify({"success": True, "tx": response["result"]})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+# (Optional) Add your distribution endpoint later here
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=10000)
