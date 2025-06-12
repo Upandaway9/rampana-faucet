@@ -12,9 +12,9 @@ CORS(app)
 
 # Load keypair from base64-encoded environment variable
 def load_keypair_from_env():
-    encoded = os.environ.get("FAUCET_KEYPAIR_B64")
+    encoded = os.environ.get("CREATOR_KEYPAIR_B64")  # ✅ changed here
     if not encoded:
-        raise ValueError("Missing FAUCET_KEYPAIR_B64 environment variable")
+        raise ValueError("Missing CREATOR_KEYPAIR_B64 environment variable")
     decoded = base64.b64decode(encoded)
     return Keypair.from_bytes(decoded)
 
