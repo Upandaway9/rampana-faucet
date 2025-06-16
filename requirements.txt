@@ -1,3 +1,4 @@
 flask
-solana
 flask-cors
+solana==0.36.7
+anchorpy==0.19.0
