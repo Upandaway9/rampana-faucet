@@ -3,17 +3,18 @@ from flask_cors import CORS
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from solana.rpc.api import Client
-from solana.rpc.commitment import Confirmed
-from anchorpy import Provider, Program, Wallet
-from anchorpy.provider import create_http_client
-from solana.rpc.types import TxOpts
+from solana.transaction import Transaction
 from spl.token.instructions import transfer_checked, get_associated_token_address, create_associated_token_account
+from spl.token.constants import TOKEN_PROGRAM_ID
+from solana.rpc.commitment import Confirmed
+from solana.rpc.types import TxOpts
 import os
 import json
 import base64
 import asyncio
 
 TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"
+DECIMALS = 6  # adjust if your token uses different decimal places
 
 app = Flask(__name__)
 CORS(app)
@@ -25,8 +26,8 @@ def load_keypair_from_env():
     decoded = base64.b64decode(encoded)
     return Keypair.from_bytes(decoded)
 
-creator_kp = load_keypair_from_env()
-creator_pub = creator_kp.pubkey()
+creator = load_keypair_from_env()
+creator_pubkey = creator.pubkey()
 client = Client("https://api.devnet.solana.com", commitment=Confirmed)
 
 @app.route("/")
@@ -39,42 +40,40 @@ def drip():
     if "wallet" not in data:
         return jsonify({"success": False, "error": "Missing wallet address"}), 400
 
-    recipient = Pubkey.from_string(data["wallet"])
-
     try:
+        recipient_pubkey = Pubkey.from_string(data["wallet"])
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(send_tokens(recipient))
-        return jsonify({"success": True, "signature": result})
+        sig = loop.run_until_complete(send_token(recipient_pubkey))
+        return jsonify({"success": True, "signature": sig})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-async def send_tokens(recipient: Pubkey):
-    from spl.token.constants import TOKEN_PROGRAM_ID
-    from solana.transaction import Transaction
-
+async def send_token(recipient_pubkey):
     mint = Pubkey.from_string(TOKEN_MINT_ADDRESS)
-    sender_token_account = get_associated_token_address(creator_pub, mint)
-    recipient_token_account = get_associated_token_address(recipient, mint)
+    source_ata = get_associated_token_address(creator_pubkey, mint)
+    dest_ata = get_associated_token_address(recipient_pubkey, mint)
 
     tx = Transaction()
 
-    resp = client.get_account_info(recipient_token_account)
-    if resp["result"]["value"] is None:
-        tx.add(create_associated_token_account(creator_pub, recipient, mint))
+    # Check if destination ATA exists
+    info = client.get_account_info(dest_ata)
+    if not info['result']['value']:
+        tx.add(create_associated_token_account(creator_pubkey, recipient_pubkey, mint))
 
     tx.add(transfer_checked(
         program_id=TOKEN_PROGRAM_ID,
-        source=sender_token_account,
+        source=source_ata,
         mint=mint,
-        dest=recipient_token_account,
-        owner=creator_pub,
-        amount=1_000_000,  # amount in base units (adjust for decimals)
-        decimals=6  # replace with your token's decimals
+        dest=dest_ata,
+        owner=creator_pubkey,
+        amount=1_000_000,  # 1 Rampana (adjust for decimals)
+        decimals=DECIMALS,
+        signers=[]
     ))
 
-    resp = client.send_transaction(tx, creator_kp, opts=TxOpts(skip_preflight=True))
-    return resp["result"]
+    response = client.send_transaction(tx, creator, opts=TxOpts(skip_preflight=True))
+    return response["result"]
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
