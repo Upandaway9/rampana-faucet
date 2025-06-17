@@ -2,9 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from solders.transaction import Transaction  # ← USE solders version!
 from solana.rpc.api import Client
-from solana.transaction import Transaction
-from spl.token.instructions import transfer_checked, get_associated_token_address, create_associated_token_account
+from spl.token.instructions import (
+    transfer_checked,
+    get_associated_token_address,
+    create_associated_token_account
+)
 from spl.token.constants import TOKEN_PROGRAM_ID
 from solana.rpc.commitment import Confirmed
 from solana.rpc.types import TxOpts
@@ -14,7 +18,7 @@ import base64
 import asyncio
 
 TOKEN_MINT_ADDRESS = "9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt"
-DECIMALS = 6  # adjust if your token uses different decimal places
+DECIMALS = 6
 
 app = Flask(__name__)
 CORS(app)
@@ -56,9 +60,8 @@ async def send_token(recipient_pubkey):
 
     tx = Transaction()
 
-    # Check if destination ATA exists
     info = client.get_account_info(dest_ata)
-    if not info['result']['value']:
+    if not info["result"]["value"]:
         tx.add(create_associated_token_account(creator_pubkey, recipient_pubkey, mint))
 
     tx.add(transfer_checked(
@@ -67,13 +70,13 @@ async def send_token(recipient_pubkey):
         mint=mint,
         dest=dest_ata,
         owner=creator_pubkey,
-        amount=1_000_000,  # 1 Rampana (adjust for decimals)
+        amount=1_000_000,  # 1 Rampana (with 6 decimals)
         decimals=DECIMALS,
         signers=[]
     ))
 
-    response = client.send_transaction(tx, creator, opts=TxOpts(skip_preflight=True))
-    return response["result"]
+    result = client.send_transaction(tx, creator, opts=TxOpts(skip_preflight=True))
+    return result["result"]
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
