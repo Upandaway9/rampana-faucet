@@ -82,10 +82,12 @@ def drip():
 
         # Build message and transaction
         message = MessageV0.try_compile(
-            payer=creator.pubkey(),
-            instructions=[ata_ix, transfer_ix],
-            address_lookup_table_accounts=[]
-        )
+    payer=creator.pubkey(),
+    instructions=[ata_ix, transfer_ix],
+    recent_blockhash=recent_blockhash,
+    address_lookup_table_accounts=[]
+)
+
         tx = VersionedTransaction(message, [creator])
 
         # Send transaction
