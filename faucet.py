@@ -77,7 +77,8 @@ def drip():
 
         # Fetch recent blockhash
         recent_blockhash_resp = client.get_latest_blockhash(Confirmed)
-        recent_blockhash = Hash.from_string(recent_blockhash_resp["result"]["value"]["blockhash"])
+        recent_blockhash = recent_blockhash_resp.value.blockhash
+
 
         # Build message and transaction
         message = MessageV0.try_compile(
