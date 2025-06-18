@@ -7,7 +7,12 @@ from solders.message import MessageV0
 from solders.transaction import VersionedTransaction
 from solders.hash import Hash
 from solders.system_program import transfer, TransferParams
-from spl.token.instructions import get_associated_token_address, create_associated_token_account, transfer_checked
+from spl.token.instructions import (
+    get_associated_token_address,
+    create_associated_token_account,
+    transfer_checked,
+    TransferCheckedParams
+)
 from spl.token.constants import TOKEN_PROGRAM_ID
 from solana.rpc.api import Client
 from solana.rpc.commitment import Confirmed
@@ -50,25 +55,27 @@ def drip():
         faucet_ata = get_associated_token_address(creator.pubkey(), TOKEN_MINT_ADDRESS)
         recipient_ata = get_associated_token_address(recipient, TOKEN_MINT_ADDRESS)
 
-        # Create recipient ATA instruction (will succeed if it exists)
+        # Create recipient ATA instruction (no-op if already exists)
         ata_ix = create_associated_token_account(
             payer=creator.pubkey(),
             owner=recipient,
             mint=TOKEN_MINT_ADDRESS
         )
 
-        # Transfer 1000 Rampana tokens (assumes 0 decimals)
+        # Build transfer_checked instruction
         transfer_ix = transfer_checked(
-            TOKEN_PROGRAM_ID,
-            source=faucet_ata,
-            mint=TOKEN_MINT_ADDRESS,
-            dest=recipient_ata,
-            owner=creator.pubkey(),
-            amount=1000,
-            decimals=0
+            TransferCheckedParams(
+                program_id=TOKEN_PROGRAM_ID,
+                source=faucet_ata,
+                mint=TOKEN_MINT_ADDRESS,
+                dest=recipient_ata,
+                owner=creator.pubkey(),
+                amount=1000,
+                decimals=0
+            )
         )
 
-        # Get recent blockhash
+        # Fetch recent blockhash
         recent_blockhash_resp = client.get_latest_blockhash(Confirmed)
         recent_blockhash = Hash.from_string(recent_blockhash_resp["result"]["value"]["blockhash"])
 
