@@ -7,7 +7,7 @@ from solders.transaction import VersionedTransaction
 from solders.hash import Hash
 from solana.rpc.api import Client
 from solana.rpc.commitment import Confirmed
-from solana.rpc.types import TxOpts  # ✅ NEW import
+from solana.rpc.types import TxOpts
 from spl.token.instructions import (
     get_associated_token_address,
     create_associated_token_account,
@@ -82,14 +82,13 @@ def drip():
         )
 
         tx = VersionedTransaction(message, [creator])
-
-        # ✅ FIXED: Use TxOpts instead of plain dict
         response = client.send_transaction(
             tx,
             opts=TxOpts(skip_preflight=True, preflight_commitment=Confirmed)
         )
 
-        return jsonify({"success": True, "signature": response.value})
+        # ✅ Convert signature to string before returning
+        return jsonify({"success": True, "signature": str(response.value)})
 
     except Exception as e:
         traceback.print_exc()
