@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 from solders.message import MessageV0
@@ -7,7 +10,6 @@ from solders.transaction import VersionedTransaction
 from solders.hash import Hash
 from solana.rpc.api import Client
 from solana.rpc.commitment import Confirmed
-from solana.rpc.types import TxOpts
 from spl.token.instructions import (
     get_associated_token_address,
     create_associated_token_account,
@@ -15,12 +17,16 @@ from spl.token.instructions import (
     TransferCheckedParams
 )
 from spl.token.constants import TOKEN_PROGRAM_ID
+
 import os
 import base64
 import traceback
 
 app = Flask(__name__)
 CORS(app)
+
+# Rate limiter: 1 request per IP per day
+limiter = Limiter(get_remote_address, app=app, default_limits=["1 per day"])
 
 client = Client("https://api.devnet.solana.com")
 TOKEN_MINT_ADDRESS = Pubkey.from_string("9tc7JNiGyTpPqzgaJMJnQWhLsuPWusVXRR7HgQ3ng5xt")
@@ -41,6 +47,7 @@ def health():
     return "Rampana Faucet is alive!"
 
 @app.route("/drip", methods=["POST"])
+@limiter.limit("1 per day")
 def drip():
     try:
         data = request.get_json()
@@ -82,12 +89,8 @@ def drip():
         )
 
         tx = VersionedTransaction(message, [creator])
-        response = client.send_transaction(
-            tx,
-            opts=TxOpts(skip_preflight=True, preflight_commitment=Confirmed)
-        )
+        response = client.send_transaction(tx, opts={"skip_preflight": True, "preflight_commitment": "confirmed"})
 
-        # ✅ Convert signature to string before returning
         return jsonify({"success": True, "signature": str(response.value)})
 
     except Exception as e:
